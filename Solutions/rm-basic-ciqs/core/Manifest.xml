@@ -51,7 +51,7 @@
             <Parameters>
                 <Parameter hidden="true" name="solutionNameD2" defaultValue="{ResourceGroup.Name}" />
                 <Parameter hidden="true" name="iotHubNameD2" defaultValue="{Outputs.oIotHubName}" />
-                <Parameter hidden="true" name="pcsReleaseVersionD2" defaultValue="master" /> <!-- DECLARATION OF PCS_RELEASE_VERSION DEFAULT VAL -->
+                <Parameter hidden="true" name="pcsReleaseVersionD2" defaultValue="1.0.0" /> <!-- DECLARATION OF PCS_RELEASE_VERSION DEFAULT VAL -->
             </Parameters>
         </ArmDeployment>  
 
