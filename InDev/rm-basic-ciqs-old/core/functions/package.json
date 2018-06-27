@@ -1,0 +1,19 @@
+{
+  "name": "deployRemoteMonitoring",
+  "description": "Deployment tools for Remote Monitoring",
+  "version": "0.0.1",
+  "dependencies": {
+    "node-forge": "0.7.1",
+    "uuid": "3.2.1",
+    "moment": "2.22.1",
+    "azure-graph": "2.2.0",
+    "azure-arm-authorization": "4.1.0",
+    "commander": "2.15.1",
+    "ms-rest-azure": "2.5.5",
+    "node-fetch": "1.7.3"
+  },
+  "engines": {
+    "node": ">=6.5.0 <6.5.0",
+    "npm": ">=3.10.3 <3.10.3"
+  }
+}

@@ -1,0 +1,32 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "sshKey": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the solution"
+            }
+        },
+        "sshPKey": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the solution"
+            }
+        }
+    },
+    "variables": {
+    },    
+    "resources": [
+    ],
+    "outputs": {
+        "oSshKey" : {
+            "type": "string",
+            "value": "[parameters('sshKey')]"
+        },
+        "oSshPKey" : {
+            "type": "string",
+            "value": "[parameters('sshPKey')]"
+        }
+    }
+}

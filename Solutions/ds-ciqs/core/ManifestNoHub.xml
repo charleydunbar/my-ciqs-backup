@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Template>
+    <Category>Solution</Category>
+    <Title>Device Simulation</Title>
+    <VariantDisplay>Use existing IoT Hub</VariantDisplay>
+    <Owner displayname="Ole Larsen" email="ole.larsen@microsoft.com"/>
+    <PublishedOn>03/27/2018</PublishedOn>
+    <ImageUrl>{PatternAssetBaseUrl}/device-simulation.png</ImageUrl>
+    <Description>Azure IoT is awesome.</Description>
+    <Summary src="Summary.md" format="markdown"/>
+    <EstimatedTime>15 Minutes</EstimatedTime>
+
+    <LocationsToExclude>
+        <Location>Australia East</Location>
+        <Location>Australia Southeast</Location>
+        <Location>Brazil South</Location>
+        <Location>Canada Central</Location>
+        <Location>Canada East</Location>
+        <Location>Central India</Location>
+        <Location>Central US</Location>
+        <Location>East Asia</Location>
+        <Location>East US 2</Location>
+        <Location>Japan East</Location>
+        <Location>Japan West</Location>
+        <Location>North Europe</Location>
+        <Location>UK West</Location>
+        <Location>UK South</Location>
+        <Location>West Central US</Location>
+        <Location>West US</Location>
+        <Location>Korea Central</Location>
+        <Location>Korea South</Location>
+        <Location>South India</Location>
+    </LocationsToExclude>
+    
+    <ProvisioningSteps>
+
+        <!-- MINOR ARM DEPLOYMENTS -->
+        <ArmDeployment source="defaults.json" title="Generating resource names">
+            <Parameters>
+                <Parameter hidden="true" name="solutionNameD1" defaultValue="{ResourceGroup.Name}" />
+            </Parameters>
+        </ArmDeployment>
+
+
+
+
+        <!-- RUNNING FUNCTIONS -->
+        <AzureFunctionApp use32BitWorkerProcess="false" servicePlanTier="Basic" createStorageAccount="true">          
+            <AppSettings>
+             Uncomment the below settings and set createStorageAccount to true to enable Azure Functions debugging features
+                <Add key="AzureWebJobsStorage" value="DefaultEndpointsProtocol=https;AccountName={Outputs.storageAccountName};AccountKey={Outputs.storageAccountKey}" />
+                <Add key="AzureWebJobsDashboard" value="DefaultEndpointsProtocol=https;AccountName={Outputs.storageAccountName};AccountKey={Outputs.storageAccountKey}" />
+                <Add key="WEBSITE_NODE_DEFAULT_VERSION" value="6.5.0" />
+            </AppSettings>        
+        </AzureFunctionApp> 
+        <Function name="createServicePrincipal" title="Creating service principal" retriable="true">
+            <Parameters>
+                <Parameter name="azureWebsiteName" type="string" hidden="true" defaultValue="{Outputs.oAzureWebsiteName}" regex=".*" />
+                <Parameter name="subscriptionId" type="string" hidden="true" defaultValue="{SubscriptionId}" />
+                <Parameter name="userId" type="string" hidden="true" defaultValue="{UserId}" />
+                <Parameter name="tenantId" type="string" hidden="true" defaultValue="{TenantId}" />
+                <Parameter name="graphAccessToken" type="string" hidden="true" defaultValue="{GraphAuthorization}" />
+                <Parameter name="accessToken" type="string" hidden="true" defaultValue="{Authorization}" />
+                <Parameter name="solutionSku" type="string" hidden="true" defaultValue="basic" />
+            </Parameters>            
+        </Function>
+        <Function name="createCertificate" title="Creating certificate" retriable="true">
+        </Function> 
+        <Function name="getDomain" title="Retrieving default tenant domain" retriable="true">
+            <Parameters>
+                <Parameter name="tenantId" type="string" hidden="true" defaultValue="{TenantId}" />
+                <Parameter name="graphAccessToken" type="string" hidden="true" defaultValue="{GraphAuthorization}" />
+            </Parameters>            
+        </Function>
+        <Function name="generatePassword" title="Configuring VM credentials" retriable="true">
+        </Function>
+        <Function name="generateDeploymentId" title="Generating deployment guid" retriable="true">
+        </Function>
+
+
+
+
+        <!-- PRIMARY ARM DEPLOYMENT -->
+        <ArmDeployment source="DeviceSimulationNoIoTHub.json" title="Creating resources in Azure">
+
+            <Parameters>
+
+                <!-- CIQS VARS -->
+                <Parameter hidden="true" name="aadTenantId" defaultValue="{TenantId}" />
+                <Parameter hidden="true" name="subscriptionId" defaultValue="{SubscriptionId}" />
+                <Parameter hidden="true" name="solutionName" defaultValue="{ResourceGroup.Name}" />
+
+
+                <!-- USER INPUTS -->
+
+
+                <!-- FUNCTION OUTPUTS -->
+                <Parameter hidden="true" name="aadClientId" defaultValue="{Outputs.oAppId}" regex=".*" />
+                <Parameter hidden="true" name="remoteEndpointSSLThumbprint" defaultValue="{Outputs.certThumbprint}" regex=".*" />
+                <Parameter hidden="true" name="remoteEndpointCertificate" defaultValue="{Outputs.cert}" regex=".*" />
+                <Parameter hidden="true" name="remoteEndpointCertificateKey" defaultValue="{Outputs.certPrivateKey}" regex=".*" />
+                <Parameter hidden="true" name="domain" defaultValue="{Outputs.oDomain}" regex=".*" />
+                <Parameter hidden="true" name="adminPassword" defaultValue="{Outputs.oPassword}" regex=".*" />
+                <Parameter hidden="true" name="deploymentId" defaultValue="{Outputs.oGenGuid}" regex=".*" /> <!-- Is this necessary? Not used in code -->
+
+
+                <!-- ARM OUTPUTS -->
+                <Parameter hidden="true" name="storageName" defaultValue="{Outputs.oStorageName}" regex=".*" />
+                <Parameter hidden="true" name="documentDBName" defaultValue="{Outputs.oDocumentDBName}" regex=".*" />
+                <Parameter hidden="true" name="vmName" defaultValue="{Outputs.oVMName}" regex=".*" />
+                <Parameter hidden="true" name="azureWebsiteName" defaultValue="{Outputs.oAzureWebsiteName}" regex=".*" />
+
+
+                <!-- ARM TEMPLATE DEFAULT PARAMS -->
+                <Parameter hidden="true" name="aadInstance" defaultValue="https://login.microsoftonline.com/" />
+                <Parameter hidden="true" name="storageSkuName" defaultValue="Standard_LRS" />
+                <Parameter hidden="true" name="storageEndpointSuffix" defaultValue="core.windows.net" />
+                <Parameter hidden="true" name="docDBConsistencyLevel" defaultValue="Strong" />
+                <Parameter hidden="true" name="docDBMaxStalenessPrefix" defaultValue="10" />
+                <Parameter hidden="true" name="docDBMaxIntervalInSeconds" defaultValue="5" />
+                <VmSku name="vmSize" hidden="true" instanceCount="1" minCores="4">
+                    <DefaultValue>Standard_D4_v3</DefaultValue>
+                </VmSku>
+                <Parameter hidden="true" name="ubuntuOSVersion" defaultValue="16.04.0-LTS" />
+                <Parameter hidden="true" name="vmSetupScriptUri" defaultValue="https://raw.githubusercontent.com/Azure/pcs-cli/DS-1.0.1/solutions/devicesimulation/single-vm/setup.sh" />   
+                <Parameter hidden="true" name="vmFQDNSuffix" defaultValue="cloudapp.azure.com" />
+
+
+                <!-- HARDCODED PARAMS -->
+                <Parameter hidden="true" name="adminUsername" defaultValue="dsadmin" />
+                <Parameter hidden="true" name="solutionType" defaultValue="DeviceSimulation" />
+                <Parameter hidden="true" name="diagnosticsEndpointUrl" defaultValue="https://iotpcsdiagnostics-staging.azurewebsites.net/api/diagnosticsevents" /> 
+
+            </Parameters>
+            
+        </ArmDeployment> 
+
+
+
+
+        <!-- POST-ARM STEPS -->
+        <Function name="awaitWebsiteCSharp" title="Waiting for website to be operable" retriable="true">
+            <Parameters>
+                <Parameter name="azureWebsite" type="string" hidden="true" defaultValue="{Outputs.azureWebsite}" />
+            </Parameters>            
+        </Function>
+
+
+
+
+        <!-- DEPLOYMENT READY -->
+        <Manual title="Done">
+          <Instructions src="Instructions.md" format="markdown" />
+        </Manual>
+
+    </ProvisioningSteps>
+</Template>

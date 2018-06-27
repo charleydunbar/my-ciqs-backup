@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Template>
+    <Category>Solution</Category>
+    <Title>Connected Factory Static - Dev</Title>
+    <Owner displayname="Ole Larsen" email="ole.larsen@microsoft.com"/>
+    <PublishedOn>03/27/2018</PublishedOn>
+    <ImageUrl>{PatternAssetBaseUrl}/connected-factory.jpg</ImageUrl>
+    <Description>Azure IoT is awesome.</Description>
+    <Summary src="Summary.md" format="markdown"/>
+    <EstimatedTime>20 Minutes</EstimatedTime>
+
+    <LocationsToExclude>
+        <Location>Australia East</Location>
+        <Location>Australia Southeast</Location>
+        <Location>Brazil South</Location>
+        <Location>Canada Central</Location>
+        <Location>Canada East</Location>
+        <Location>Central India</Location>
+        <Location>Central US</Location>
+        <Location>East Asia</Location>
+        <Location>East US 2</Location>
+        <Location>Japan East</Location>
+        <Location>Japan West</Location>
+        <Location>North Europe</Location>
+        <Location>UK West</Location>
+        <Location>UK South</Location>
+        <Location>West Central US</Location>
+        <Location>West US</Location>
+        <Location>Korea Central</Location>
+        <Location>Korea South</Location>
+        <Location>South India</Location>
+    </LocationsToExclude>
+
+    <ProvisioningSteps>
+
+        <!-- MINOR ARM DEPLOYMENTS -->
+        <ArmDeployment source="defaults.json" title="Generating resource names">
+            <Parameters>
+                <Parameter hidden="true" name="solutionNameD1" defaultValue="{ResourceGroup.Name}" />
+            </Parameters>
+        </ArmDeployment>
+
+
+
+
+        <!-- RUNNING FUNCTIONS -->
+        <AzureFunctionApp use32BitWorkerProcess="false" servicePlanTier="Basic" createStorageAccount="true">          
+            <AppSettings>
+             Uncomment the below settings and set createStorageAccount to true to enable Azure Functions debugging features
+                <Add key="AzureWebJobsStorage" value="DefaultEndpointsProtocol=https;AccountName={Outputs.storageAccountName};AccountKey={Outputs.storageAccountKey}" />
+                <Add key="AzureWebJobsDashboard" value="DefaultEndpointsProtocol=https;AccountName={Outputs.storageAccountName};AccountKey={Outputs.storageAccountKey}" />
+                <Add key="WEBSITE_NODE_DEFAULT_VERSION" value="6.5.0" />
+            </AppSettings>        
+        </AzureFunctionApp>          
+        <Function name="createServicePrincipal" title="Creating service principal" retriable="true">
+            <Parameters>
+                <Parameter name="azureWebsiteName" type="string" hidden="true" defaultValue="{ResourceGroup.Name}" />
+                <Parameter name="subscriptionId" type="string" hidden="true" defaultValue="{SubscriptionId}" />
+                <Parameter name="userId" type="string" hidden="true" defaultValue="{UserId}" />
+                <Parameter name="tenantId" type="string" hidden="true" defaultValue="{TenantId}" />
+                <Parameter name="graphAccessToken" type="string" hidden="true" defaultValue="{GraphAuthorization}" />
+                <Parameter name="accessToken" type="string" hidden="true" defaultValue="{Authorization}" />
+                <Parameter name="solutionSku" type="string" hidden="true" defaultValue="basic" />
+            </Parameters>            
+        </Function>
+        <Function name="generatePassword" title="Configuring credentials" retriable="true">
+        </Function>
+        <Function name="getUserObjectId" title="Retrieving rdxOwnerId" retriable="true">
+            <Parameters>
+                <Parameter name="accessToken" type="string" hidden="true" defaultValue="{Authorization}" />
+            </Parameters>            
+        </Function>
+        <Function name="modifyResourceNames" title="Validating resource names" retriable="true">
+            <Parameters>
+                <Parameter name="preStorageName" type="string" hidden="true" defaultValue="{Outputs.oPreStorageName}" />
+            </Parameters>            
+        </Function>
+        <Function name="runKeyUA" title="runKeyUA" retriable="true">
+        </Function>
+        <Function name="getServicePrincipalObjectIds" title="Retrieving service principal data" retriable="true">
+            <Parameters>
+                <Parameter name="tenantId" type="string" hidden="true" defaultValue="{TenantId}" />
+                <Parameter name="accessToken" type="string" hidden="true" defaultValue="{GraphAuthorization}" />
+                <Parameter name="appId" type="string" hidden="true" defaultValue="{Outputs.oServicePrincipalId}" />
+            </Parameters>            
+        </Function>
+
+
+
+
+        <!-- PRIMARY ARM DEPLOYMENT -->
+        <ArmDeployment source="connectedfactorymapkey.json" title="Creating resources in Azure">
+
+            <LocationProvidedFor>
+                <!-- <ResourceType>Microsoft.BingMaps/mapApis</ResourceType> -->
+                <ResourceType>Microsoft.Resources/deployments</ResourceType>
+            </LocationProvidedFor>
+
+            <Parameters>
+
+                <!-- CIQS VARS -->
+                <Parameter hidden="true" name="aadTenant" defaultValue="{TenantId}" />
+                <Parameter hidden="true" name="suiteName" defaultValue="{ResourceGroup.Name}" />
+
+
+                <!-- USER INPUTS -->
+
+
+                <!-- FUNCTION OUTPUTS -->
+                <Parameter hidden="true" name="aadClientId" defaultValue="{Outputs.oAppId}" regex=".*" />
+                <Parameter hidden="true" name="storageName" defaultValue="{Outputs.oStorageName}" regex=".*" />
+
+
+                <!-- ARM OUTPUTS -->
+                <Parameter hidden="true" name="iotHubName" defaultValue="{Outputs.oIotHubName}" regex=".*" />
+
+
+                <!-- ARM TEMPLATE DEFAULT PARAMS -->
+                <Parameter hidden="true" name="aadInstance" defaultValue="https://login.microsoftonline.com/{0}" />
+
+
+                <!-- HARDCODED PARAMS -->
+                <Parameter hidden="true" name="storageEndpointSuffix" defaultValue="core.windows.net" />
+
+
+                <!-- ADD INS -->
+                <!-- <Parameter hidden="true" name="bingMapsLocation" defaultValue="westus" /> -->
+                <Parameter hidden="true" name="suiteType" defaultValue="ConnectedFactory" />
+                <Parameter hidden="true" name="rdxEnvironmentName" defaultValue="{Outputs.oRdxEnvironmentName}" />
+                <Parameter hidden="true" name="rdxAuthenticationClientSecret" defaultValue="{Outputs.oPassword}" /><!-- Write function for 'GraphHelper.NewAADAppCredential' and surrounding behavior -->
+                <Parameter hidden="true" name="rdxOwnerServicePrincipalObjectId" defaultValue="{Outputs.oRdxOwnerServicePrincipalObjectId}" />
+                <Parameter hidden="true" name="adminUsername" defaultValue="docker" />
+                <Parameter hidden="true" name="adminPassword" defaultValue="{Outputs.oPassword}" />
+                <Parameter hidden="true" name="rdxDnsName" defaultValue="timeseries.azure.com" /> <!-- AzureEnvironment.RDXEndpoint, so  -->
+
+                <Parameter hidden="true" name="keyVaultSecretBaseName" defaultValue="{Outputs.oKeyVaultSecretBaseName}" /> <!-- output from other azure func, just appName.Replace(" ", "") -->
+                <Parameter hidden="true" name="keyVaultVmSecret" defaultValue="{Outputs.oKeyVaultVmSecret}" /> <!-- output from other azure func -->
+                <Parameter hidden="true" name="keyVaultWebsiteSecret" defaultValue="{Outputs.oKeyVaultWebsiteSecret}" /> <!-- output from other azure func -->
+                <Parameter hidden="true" name="uaSecretThumbprint" defaultValue="{Outputs.oUaSecretThumbprint}" /> <!-- output from other azure func -->
+                <Parameter hidden="true" name="uaSecretPassword" defaultValue="{Outputs.oUaSecretPassword}" /> <!-- output from other azure func; but just "password" -->
+
+                <Parameter hidden="true" name="webSitesServicePrincipalObjectId" defaultValue="{Outputs.oWebSitesServicePrincipalObjectId}" /> <!-- servicePrincipal.ObjectId of GetServicePrincipalByName(webSiteAppId -->
+                <Parameter hidden="true" name="rdxAccessPolicyPrincipalObjectId" defaultValue="{Outputs.oRdxAccessPolicyPrincipalObjectId}" /> <!-- servicePrincipal.ObjectId of createServicePrincipal -->
+
+
+                <!-- OTHER DEFAULTS -->
+                <Parameter hidden="true" name="mapApiQueryKey" defaultValue="0" />
+                <Parameter hidden="true" name="storageSkuName" defaultValue="Standard_LRS" />
+                <Parameter hidden="true" name="storageKind" defaultValue="Storage" />
+                <Parameter hidden="true" name="iotHubSkuName" defaultValue="S1" />
+                <Parameter hidden="true" name="iotHubSkuCapacityUnits" defaultValue="3" />
+                <Parameter hidden="true" name="rdxEnvironmentSkuName" defaultValue="S1" />
+                <Parameter hidden="true" name="rdxEnvironmentSkuCapacity" defaultValue="1" />
+                <Parameter hidden="true" name="rdxEnvironmentDataRetentionTime" defaultValue="P30D" />
+                <Parameter hidden="true" name="webAppUri" defaultValue="{Outputs.oWebAppUri}" />
+                <Parameter hidden="true" name="webPlanSkuName" defaultValue="S1" />
+                
+                <Parameter hidden="true" name="webPlanWorkerSize" defaultValue="0" />
+                <Parameter hidden="true" name="webPlanWorkerCount" defaultValue="1" />
+                <Parameter hidden="true" name="webPlanAlwaysOn" defaultValue="true" />
+                <Parameter hidden="true" name="keyVaultSkuName" defaultValue="Standard" />
+                <Parameter hidden="true" name="vmArmTemplateUri" defaultValue="{Outputs.oVmArmTemplateUri}" />
+                <Parameter hidden="true" name="vmSize" defaultValue="Standard_D1_v2" />
+                <Parameter hidden="true" name="initSimulationUri" defaultValue="{Outputs.oInitSimulationUri}" />
+                <Parameter hidden="true" name="simulationUri" defaultValue="{Outputs.oSimulationUri}" />
+
+            </Parameters>
+
+        </ArmDeployment>
+
+        
+        <Function name="awaitWebsiteCSharp" title="Waiting for website to be operable" retriable="true">
+            <Parameters>
+                <Parameter name="azureWebsite" type="string" hidden="true" defaultValue="{Outputs.azureWebsite}" />
+            </Parameters>            
+        </Function>
+
+
+        <!-- DEPLOYMENT READY -->
+        <Manual title="Done">
+          <Instructions src="Instructions.md" format="markdown" />
+        </Manual>
+
+    </ProvisioningSteps>
+</Template>

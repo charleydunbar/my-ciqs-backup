@@ -1,0 +1,22 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "solutionNameD1": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the solution"
+            }
+        }
+    },
+    "variables": {
+    },    
+    "resources": [
+    ],
+    "outputs": {
+        "oIotHubName" : {
+            "type": "string",
+            "value": "[concat('iothub-', take(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('solutionNameD1')), 5))]"
+        }
+    }
+}

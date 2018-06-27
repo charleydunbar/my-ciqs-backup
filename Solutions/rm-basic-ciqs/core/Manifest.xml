@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Template>
+    <Category>Solution</Category>
+    <Title>Remote Monitoring - Basic</Title>
+    <Owner displayname="Ole Larsen" email="ole.larsen@microsoft.com"/>
+    <PublishedOn>03/27/2018</PublishedOn>
+    <ImageUrl>{PatternAssetBaseUrl}/remote-monitoring.jpg</ImageUrl>
+    <Description>Azure IoT is awesome.</Description>
+    <Summary src="Summary.md" format="markdown"/>
+    <EstimatedTime>20 Minutes</EstimatedTime>
+
+    <LocationsToExclude>
+        <Location>Australia East</Location>
+        <Location>Australia Southeast</Location>
+        <Location>Brazil South</Location>
+        <Location>Canada Central</Location>
+        <Location>Canada East</Location>
+        <Location>Central India</Location>
+        <Location>Central US</Location>
+        <Location>East Asia</Location>
+        <Location>East US 2</Location>
+        <Location>Japan East</Location>
+        <Location>Japan West</Location>
+        <Location>North Europe</Location>
+        <Location>UK West</Location>
+        <Location>UK South</Location>
+        <Location>West Central US</Location>
+        <Location>West US</Location>
+    </LocationsToExclude>
+    
+    <ProvisioningSteps>
+
+        <!-- GETTING USER INPUT -->
+        <Manual title="Enter parameters" >
+            <Parameters>
+                <!-- NOTE!! If the msRuntime allowedValues are modified, the convertMSRuntime function must also be updated -->
+                <Parameter name="msRuntime" allowedValues="C#, Java" defaultValue="C#" description="VM runtime environment" />
+            </Parameters>
+        </Manual> 
+
+
+
+
+        <!-- MINOR ARM DEPLOYMENTS -->
+        <ArmDeployment source="defaults1.json" title="Generating resource names 1/2">
+            <Parameters>
+                <Parameter hidden="true" name="solutionNameD1" defaultValue="{ResourceGroup.Name}" />
+            </Parameters>
+        </ArmDeployment> 
+        <ArmDeployment source="defaults2.json" title="Generating resource names 2/2">
+            <Parameters>
+                <Parameter hidden="true" name="solutionNameD2" defaultValue="{ResourceGroup.Name}" />
+                <Parameter hidden="true" name="iotHubNameD2" defaultValue="{Outputs.oIotHubName}" />
+                <Parameter hidden="true" name="pcsReleaseVersionD2" defaultValue="master" /> <!-- DECLARATION OF PCS_RELEASE_VERSION DEFAULT VAL -->
+            </Parameters>
+        </ArmDeployment>  
+
+
+
+
+        <!-- RUNNING FUNCTIONS -->
+        <AzureFunctionApp use32BitWorkerProcess="false" servicePlanTier="Basic" createStorageAccount="true">          
+            <AppSettings>
+             Uncomment the below settings and set createStorageAccount to true to enable Azure Functions debugging features
+                <Add key="AzureWebJobsStorage" value="DefaultEndpointsProtocol=https;AccountName={Outputs.storageAccountName};AccountKey={Outputs.storageAccountKey}" />
+                <Add key="AzureWebJobsDashboard" value="DefaultEndpointsProtocol=https;AccountName={Outputs.storageAccountName};AccountKey={Outputs.storageAccountKey}" />
+                <Add key="WEBSITE_NODE_DEFAULT_VERSION" value="6.5.0" />
+            </AppSettings>        
+        </AzureFunctionApp>     
+        <Function name="createServicePrincipal" title="Creating service principal" retriable="true">
+            <Parameters>
+                <Parameter name="azureWebsiteName" type="string" hidden="true" defaultValue="{Outputs.oAzureWebsiteName}" />
+                <Parameter name="subscriptionId" type="string" hidden="true" defaultValue="{SubscriptionId}" />
+                <Parameter name="userId" type="string" hidden="true" defaultValue="{UserId}" />
+                <Parameter name="tenantId" type="string" hidden="true" defaultValue="{TenantId}" />
+                <Parameter name="graphAccessToken" type="string" hidden="true" defaultValue="{GraphAuthorization}" />
+                <Parameter name="accessToken" type="string" hidden="true" defaultValue="{Authorization}" />
+                <Parameter name="solutionSku" type="string" hidden="true" defaultValue="basic" />
+            </Parameters>            
+        </Function>
+        <Function name="createCertificate" title="Creating certificate" retriable="true">
+        </Function>
+        <Function name="generatePassword" title="Configuring VM credentials" retriable="true">
+        </Function>
+        <Function name="convertMSRuntime" title="Configuring VM runtime environment" retriable="true">
+            <Parameters>
+                <Parameter name="msRuntime" type="string" hidden="true" defaultValue="{Inputs.msRuntime}" />
+            </Parameters>            
+        </Function>
+        <Function name="checkMapsQuota" title="Configuring maps" retriable="true">
+            <Parameters>
+                <Parameter name="subscriptionId" type="string" hidden="true" defaultValue="{SubscriptionId}" />
+                <Parameter name="tokenKey" type="string" hidden="true" defaultValue="{Authorization}" />
+            </Parameters>
+        </Function>
+
+
+
+
+        <!-- PRIMARY ARM DEPLOYMENT -->
+        <ArmDeployment source="basic.json" title="Creating resources in Azure">
+
+            <LocationProvidedFor>
+                <ResourceType>Microsoft.Maps/accounts</ResourceType>
+                <ResourceType>Microsoft.Resources/deployments</ResourceType>
+                <ResourceType>Microsoft.EventHub/namespaces/eventhubs</ResourceType>
+                <ResourceType>Microsoft.EventHub/namespaces/eventhubs/authorizationRules</ResourceType>
+            </LocationProvidedFor>
+
+            <Parameters>
+
+                <!-- CIQS VARS -->
+                <Parameter hidden="true" name="aadTenantId" defaultValue="{TenantId}" /> 
+                <Parameter hidden="true" name="solutionName" defaultValue="{ResourceGroup.Name}" />    
+
+
+                <!-- USER INPUTS -->
+
+
+                <!-- FUNCTION OUTPUTS -->
+                <Parameter hidden="true" name="aadClientId" defaultValue="{Outputs.oAppId}" regex=".*" />
+                <Parameter hidden="true" name="remoteEndpointSSLThumbprint" defaultValue="{Outputs.certThumbprint}" regex=".*" />
+                <Parameter hidden="true" name="remoteEndpointCertificate" defaultValue="{Outputs.cert}" regex=".*" />
+                <Parameter hidden="true" name="remoteEndpointCertificateKey" defaultValue="{Outputs.certPrivateKey}" regex=".*" />
+                <Parameter hidden="true" name="adminPassword" defaultValue="{Outputs.oPassword}" regex=".*" />
+                <Parameter hidden="true" name="microServiceRuntime" defaultValue="{Outputs.microServiceRuntime}" regex=".*" />
+                <Parameter hidden="true" name="staticMap" defaultValue="{Outputs.oStaticMap}" /> 
+
+
+                <!-- ARM OUTPUTS -->
+                <Parameter hidden="true" name="iotHubName" defaultValue="{Outputs.oIotHubName}" regex=".*" />
+                <Parameter hidden="true" name="storageName" defaultValue="{Outputs.oStorageName}" regex=".*" />
+                <Parameter hidden="true" name="documentDBName" defaultValue="{Outputs.oDocumentDBName}" regex=".*" />
+                <Parameter hidden="true" name="vmName" defaultValue="{Outputs.oVmName}" regex=".*" />
+                <Parameter hidden="true" name="eventHubName" defaultValue="{Outputs.oEventHubName}" regex=".*" /> 
+                <Parameter hidden="true" name="eventHubNamespaceName" defaultValue="{Outputs.oEventHubNamespaceName}" regex=".*" />
+                <Parameter hidden="true" name="eventHubAuthorizationName" defaultValue="{Outputs.oEventHubAuthorizationName}" regex=".*" />   
+                <Parameter hidden="true" name="streamingJobsName" defaultValue="{Outputs.oStreamingJobsName}" regex=".*" /> 
+                <Parameter hidden="true" name="vmSetupScriptUri" defaultValue="{Outputs.oVmSetupScriptUri}" regex=".*" />
+                <Parameter hidden="true" name="applyRuleFilterJsUdf" defaultValue="{Outputs.oApplyRuleFilterJsUdf}" regex=".*" />         
+                <Parameter hidden="true" name="flattenMeasurementsJsUdf" defaultValue="{Outputs.oFlattenMeasurementsJsUdf}" regex=".*" />         
+                <Parameter hidden="true" name="removeUnusedPropertiesJsUdf" defaultValue="{Outputs.oRemoveUnusedPropertiesJsUdf}" regex=".*" />         
+                <Parameter hidden="true" name="transformQuery" defaultValue="{Outputs.oTransformQuery}" regex=".*" />
+                <Parameter hidden="true" name="pcsReleaseVersion" defaultValue="{Outputs.oPcsReleaseVersion}" regex=".*" />
+                <Parameter hidden="true" name="azureWebsiteName" defaultValue="{Outputs.oAzureWebsiteName}" regex=".*" />
+
+
+                <!-- ARM TEMPLATE DEFAULT PARAMS -->
+                <Parameter hidden="true" name="aadInstance" defaultValue="https://login.microsoftonline.com/" />
+                <Parameter hidden="true" name="solutionType" defaultValue="RemoteMonitoringV2" />
+                <Parameter hidden="true" name="solutionWebAppPort" defaultValue="80" />
+                <Parameter hidden="true" name="microServiceVersion" defaultValue="testing" />
+                <Parameter hidden="true" name="storageSkuName" defaultValue="Standard_LRS" />                
+                <Parameter hidden="true" name="storageEndpointSuffix" defaultValue="core.windows.net" />
+                <Parameter hidden="true" name="docDBConsistencyLevel" defaultValue="Strong" />
+                <Parameter hidden="true" name="docDBMaxStalenessPrefix" defaultValue="10" />
+                <Parameter hidden="true" name="docDBMaxIntervalInSeconds" defaultValue="5" />
+                <Parameter hidden="true" name="eventHubRetentionInDays" defaultValue="1" />
+                <Parameter hidden="true" name="eventHubPartitionCount" defaultValue="2" />
+                <Parameter hidden="true" name="eventHubSkuTier" defaultValue="Basic" />
+                <Parameter hidden="true" name="eventHubSkuCapacity" defaultValue="1" /> 
+                <Parameter hidden="true" name="serviceBusEndpointSuffix" defaultValue="servicebus.windows.net" />
+                <Parameter hidden="true" name="iotHubSku" defaultValue="S1" />
+                <Parameter hidden="true" name="iotHubTier" defaultValue="Standard" />  
+                <Parameter hidden="true" name="streamingJobsOutputStartMode" defaultValue="JobStartTime" />         
+                <Parameter hidden="true" name="streamingJobsEventsOutOfOrderPolicy" defaultValue="Adjust" />           
+                <Parameter hidden="true" name="streamingJobsInputContainerName" defaultValue="referenceinput" />  
+                <Parameter hidden="true" name="numberOfStreamingUnits" defaultValue="3" />
+                <VmSku name="vmSize" hidden="true" instanceCount="1" minCores="4">
+                    <DefaultValue>Standard_D1_v2</DefaultValue>
+                </VmSku>
+                <Parameter hidden="true" name="ubuntuOSVersion" defaultValue="16.04.0-LTS" />
+                <Parameter hidden="true" name="vmFQDNSuffix" defaultValue="cloudapp.azure.com" />
+                <Parameter hidden="true" name="bingMapsLocation" defaultValue="westus" />
+                <Parameter hidden="true" name="globalMapsLocation" defaultValue="global" />
+
+
+                <!-- HARDCODED PARAMS -->
+                <Parameter hidden="true" name="adminUsername" defaultValue="rmadmin" />
+                <Parameter hidden="true" name="pcsDockerTag" defaultValue="1.0.0" />
+
+            </Parameters>
+
+        </ArmDeployment> 
+
+
+
+
+        <!-- POST-ARM STEPS -->
+        <Function name="startStreamingJob" title="Starting streaming job" retriable="true">
+            <Parameters>
+                <Parameter name="accessToken" type="string" hidden="true" defaultValue="{Authorization}" />
+                <Parameter name="subscriptionId" type="string" hidden="true" defaultValue="{SubscriptionId}" />
+                <Parameter name="resourceGroupName" type="string" hidden="true" defaultValue="{ResourceGroup.Name}" />
+                <Parameter name="streamingJobsName" type="string" hidden="true" defaultValue="{Outputs.oStreamingJobsName}" />
+            </Parameters>            
+        </Function>  
+        <Function name="awaitWebsiteCSharp" title="Waiting for website to be operable" retriable="true">
+            <Parameters>
+                <Parameter name="azureWebsite" type="string" hidden="true" defaultValue="{Outputs.azureWebsite}" />
+            </Parameters>            
+        </Function>  
+
+
+
+
+        <!-- DEPLOYMENT READY -->
+        <Manual title="Done">
+          <Instructions src="Instructions.md" format="markdown" />
+        </Manual>
+        
+    </ProvisioningSteps>
+</Template>

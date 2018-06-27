@@ -1,0 +1,100 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "hostName": {
+            "type": "string",
+            "metadata": {
+                "description": "The machine learning API location"
+            }
+        },
+        "iotHubConnectionString": {
+            "type": "string",
+            "metadata": {
+                "description": "The machine learning API location"
+            }
+        },
+        "storageConnectionString": {
+            "type": "string",
+            "metadata": {
+                "description": "The machine learning API location"
+            }
+        },
+        "ehDataName": {
+            "type": "string",
+            "metadata": {
+                "description": "The machine learning API location"
+            }
+        },
+        "eventHubConnectionString": {
+            "type": "string",
+            "metadata": {
+                "description": "The machine learning API location"
+            }
+        },
+        "simulatorDataFileName": {
+            "type": "string",
+            "metadata": {
+                "description": "The machine learning API location"
+            }
+        },
+        "mlApiUrl": {
+            "type": "string",
+            "metadata": {
+                "description": "The machine learning API location"
+            }
+        },
+        "mlApiKey": {
+            "type": "string",
+            "metadata": {
+                "description": "The machine learning API key"
+            }
+        },
+        "suiteName": {
+            "type": "string",
+            "metadata": {
+                "description": "the suite name"
+            }
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "webVersion": "2015-04-01",
+        "webJobSiteName": "[concat(parameters('suiteName'), '-jobhost')]"
+    },    
+    "resources": [
+        {
+            "apiVersion": "[variables('webVersion')]",
+            "name": "[variables('webJobSiteName')]",
+            "type": "Microsoft.Web/sites",
+            "location": "[variables('location')]",
+            "properties": {
+            },
+            "resources": [
+                {
+                    "apiVersion": "[variables('webVersion')]",
+                    "name": "Appsettings",
+                    "type": "config",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/Sites', variables('webJobSiteName'))]"
+                    ],
+                    "properties": {
+                        "iotHub.HostName": "[parameters('hostName')]",
+                        "iotHub.ConnectionString": "[parameters('iotHubConnectionString')]",
+                        "device.StorageConnectionString": "[parameters('storageConnectionString')]",
+                        "device.TableName": "DeviceList",
+                        "eventHub.HubName": "[parameters('ehDataName')]",
+                        "eventHub.ConnectionString": "[parameters('eventHubConnectionString')]",
+                        "eventHub.StorageConnectionString": "[parameters('storageConnectionString')]",
+                        "ObjectTypePrefix": "",
+                        "SimulatorDataFileName": "[parameters('simulatorDataFileName')]",
+                        "MLApiUrl": "[parameters('mlApiUrl')]",
+                        "MLApiKey": "[parameters('mlApiKey')]"
+                    }
+                }
+            ]
+        }
+    ],
+    "outputs": {
+    }
+}

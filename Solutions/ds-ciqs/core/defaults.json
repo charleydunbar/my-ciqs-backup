@@ -1,0 +1,38 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "solutionNameD1": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the solution"
+            }
+        }
+    },
+    "variables": {
+    },    
+    "resources": [
+    ],
+    "outputs": {
+        "oStorageName" : {
+            "type": "string",
+            "value": "[concat('storage', take(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('solutionNameD1')), 5))]"
+        },
+        "oIotHubName" : {
+            "type": "string",
+            "value": "[concat('iothub-', take(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('solutionNameD1')), 5))]"
+        },
+        "oDocumentDBName" : {
+            "type": "string",
+            "value": "[concat('documentdb-', take(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('solutionNameD1')), 5))]"
+        },
+        "oVMName" : {
+            "type": "string",
+            "value": "[concat('vm-', take(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('solutionNameD1')), 5))]"
+        },
+        "oAzureWebsiteName" : {
+            "type": "string",
+            "value": "[concat(parameters('solutionNameD1'), take(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('solutionNameD1')), 5))]"
+        }
+    }
+}

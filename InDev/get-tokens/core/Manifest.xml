@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Template>
+    <Category>Solution</Category>
+    <Title>Get Tokens</Title>
+    <Owner displayname="Ole Larsen" email="ole.larsen@microsoft.com"/>
+    <PublishedOn>03/27/2018</PublishedOn>
+    <ImageUrl>{PatternAssetBaseUrl}/device-simulation.png</ImageUrl>
+    <Description>Azure IoT is awesome.</Description>
+    <Summary src="Summary.md" format="markdown"/>
+    <EstimatedTime>10 Minutes</EstimatedTime>
+    <ProvisioningSteps>
+<!--
+         <ArmDeployment source="defaults1.json" title="Generating resource names 1/2">
+        </ArmDeployment> 
+
+        <Manual title="View Outputs" >
+            <Parameters>
+                <Parameter name="osshPrivateKey" defaultValue="{Outputs.oSshPKey}" description="osshPrivateKey" regex=".*" />
+                <Parameter name="osshKey" defaultValue="{Outputs.oSshKey}" description="osshKey" regex=".*" />
+            </Parameters>
+        </Manual>
+-->
+        <AzureFunctionApp use32BitWorkerProcess="false" servicePlanTier="Basic" createStorageAccount="true">          
+            <AppSettings>
+             Uncomment the below settings and set createStorageAccount to true to enable Azure Functions debugging features
+                <Add key="AzureWebJobsStorage" value="DefaultEndpointsProtocol=https;AccountName={Outputs.storageAccountName};AccountKey={Outputs.storageAccountKey}" />
+                <Add key="AzureWebJobsDashboard" value="DefaultEndpointsProtocol=https;AccountName={Outputs.storageAccountName};AccountKey={Outputs.storageAccountKey}" />
+                <Add key="WEBSITE_NODE_DEFAULT_VERSION" value="6.5.0" />
+            </AppSettings>        
+        </AzureFunctionApp>
+
+        <Function name="getTokens" title="getting tokens" retriable="true">
+            <Parameters>
+                <Parameter name="graphAccessToken" type="string" hidden="true" defaultValue="{GraphAuthorization}" />
+                <Parameter name="accessToken" type="string" hidden="true" defaultValue="{Authorization}" />
+            </Parameters>            
+        </Function>
+        
+        <Function name="getToken" title="getting token" retriable="true">
+            <Parameters>
+                <Parameter name="graphAccessToken" type="string" hidden="true" defaultValue="{GraphAuthorization}" />
+                <Parameter name="accessToken" type="string" hidden="true" defaultValue="{Authorization}" />
+            </Parameters>            
+        </Function>
+     
+        <Manual title="View Outputs" >
+            <Parameters>
+                <Parameter name="ogauth" defaultValue="{Outputs.oGAuth}" description="oGAuth" regex=".*" />
+                <Parameter name="oauth" defaultValue="{Outputs.oAuth}" description="oAuth" regex=".*" />
+                <Parameter name="tenant" defaultValue="{TenantId}" description="tenant" regex=".*" />
+            </Parameters>
+        </Manual>
+
+        <!-- DEPLOYMENT READY -->
+        <Manual title="Done">
+          <Instructions src="Instructions.md" format="markdown" />
+        </Manual>
+
+    </ProvisioningSteps>
+</Template>
